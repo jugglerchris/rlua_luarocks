@@ -1,6 +1,8 @@
 //! This example shows a simple read-evaluate-print-loop (REPL).
 
-use rlua::{Error, Lua, MultiValue};
+use std::fs::File;
+
+use rlua::{Lua, MultiValue};
 
 pub fn ensure_symbols() {
     let _funcs: &[*const extern "C" fn()] = &[
@@ -9,53 +11,37 @@ pub fn ensure_symbols() {
     std::mem::forget(_funcs);
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     ensure_symbols();
     let lua = unsafe { Lua::unsafe_new_with_flags(rlua::StdLib::ALL, rlua::InitFlags::NONE) };
-    lua.context(|lua| {
-        let rl_c = rustyline::DefaultEditor::new();
-        match rl_c {
-            Ok(mut editor) => {
-                loop {
-                    let mut prompt = "> ";
-                    let mut line = String::new();
-                    loop {
-                        match editor.readline(prompt) {
-                            Ok(input) => line.push_str(&input),
-                            Err(_) => return,
-                        }
-                        match lua.load(&line).eval::<MultiValue>() {
-                            Ok(values) => {
-                                let _ = editor.add_history_entry(line);
-                                if !values.is_empty() {
-                                    println!(
-                                        "{}",
-                                        values
-                                        .iter()
-                                        .map(|value| format!("{:?}", value))
-                                        .collect::<Vec<_>>()
-                                        .join("\t")
-                                        );
-                                }
-                                break;
-                            }
-                            Err(Error::SyntaxError {
-                                incomplete_input: true,
-                                ..
-                            }) => {
-                                // continue reading input and append it to `line`
-                                line.push_str("\n"); // separate input lines
-                                prompt = ">> ";
-                            }
-                            Err(e) => {
-                                eprintln!("error: {}", e);
-                                break;
-                            }
-                        }
+
+    let mut args = std::env::args();
+    args.next().unwrap(); // Skip program name
+
+    if let Some(arg) = args.next() {
+        lua.context(|lua| {
+            let prog = std::io::read_to_string(File::open(arg)?)?;
+            match lua.load(&prog).eval::<MultiValue>() {
+                Ok(values) => {
+                    if !values.is_empty() {
+                        println!(
+                            "{}",
+                            values
+                            .iter()
+                            .map(|value| format!("{:?}", value))
+                            .collect::<Vec<_>>()
+                            .join("\t")
+                            );
                     }
                 }
+                Err(e) => {
+                    eprintln!("error: {}", e);
+                }
             }
-            Err(e) => eprintln!("error: {}", e),
-        }
-    });
+            Ok(())
+        })
+    } else {
+        println!("Expected filename argument");
+        Ok(())
+    }
 }
