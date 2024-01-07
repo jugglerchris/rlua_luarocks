@@ -1,6 +1,6 @@
 -- Proof of concept using external Lua libraries.
-package.path = package.path .. ";/usr/share/lua/5.3/?.lua;/usr/share/lua/5.2/?.lua"
-package.cpath = package.cpath .. ";/usr/lib/x86_64-linux-gnu/lua/5.3/?.so"
+package.path = package.path .. ";./lr/share/lua/5.4/?.lua"
+package.cpath = package.cpath .. ";./lr/lib/lua/5.4/?.so"
 
 http_request = require('http.request')
 headers, stream = assert(http_request.new_from_uri("http://example.com"):go())

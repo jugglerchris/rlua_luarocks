@@ -10,11 +10,11 @@ LUA_TAR="lua-5.4.6.tar.gz"
 LUA_URL="https://www.lua.org/ftp/${LUA_TAR}"
 LUA_DIR="${LUAROCKS_AREA}/lua-5.4.6"
 
-APP=$(realpath target/debug/rlua_luarocks)
-
 cargo build
+ln -s debug/rlua_luarocks target/lua
 
-echo $LUAROCKS_AREA
+APP=$(realpath target/debug/rlua_luarocks)
+HERE=$(realpath $(dirname $0))
 
 mkdir -p "${LUAROCKS_AREA}"
 
@@ -46,3 +46,7 @@ fi
 
 make
 make install
+
+cd "$HERE"
+lr/bin/luarocks install http
+target/debug/rlua_luarocks ./test_http.lua
