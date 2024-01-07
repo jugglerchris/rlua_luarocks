@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rlua = { version = "0.19", default_features=false, features=["builtin-lua53"] }
-rlua-lua53-sys = "0.1.6"
+rlua = { version = "0.19" }
+rlua-lua54-sys = "0.1.6"
