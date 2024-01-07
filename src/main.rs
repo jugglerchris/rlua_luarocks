@@ -2,8 +2,17 @@
 
 use rlua::{Error, Lua, MultiValue};
 
+pub fn ensure_symbols() {
+    let _funcs: &[*const extern "C" fn()] = &[
+        rlua_lua53_sys::bindings::luaL_openlibs as _,
+    ];
+    std::mem::forget(_funcs);
+}
+
 fn main() {
-    Lua::new().context(|lua| {
+    ensure_symbols();
+    let lua = unsafe { Lua::unsafe_new_with_flags(rlua::StdLib::ALL, rlua::InitFlags::NONE) };
+    lua.context(|lua| {
         let rl_c = rustyline::DefaultEditor::new();
         match rl_c {
             Ok(mut editor) => {
@@ -18,14 +27,16 @@ fn main() {
                         match lua.load(&line).eval::<MultiValue>() {
                             Ok(values) => {
                                 let _ = editor.add_history_entry(line);
-                                println!(
-                                    "{}",
-                                    values
+                                if !values.is_empty() {
+                                    println!(
+                                        "{}",
+                                        values
                                         .iter()
                                         .map(|value| format!("{:?}", value))
                                         .collect::<Vec<_>>()
                                         .join("\t")
-                                );
+                                        );
+                                }
                                 break;
                             }
                             Err(Error::SyntaxError {
